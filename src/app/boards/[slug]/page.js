@@ -1,69 +1,80 @@
 import { supabase } from '../../../lib/supabaseClient.js'
-import ComposePost from '../../../components/ComposePost.jsx'
-import Comments from '../../../components/Comments.jsx'
-import CommentBox from '../../../components/CommentBox.jsx'
-import PostActions from '../../../components/PostActions.jsx'
+import Link from 'next/link'
+import VoteButton from '../../../components/VoteButton.jsx'
 
+export const dynamic = 'force-dynamic'   // 빌드타임 수집 막고 항상 런타임 쿼리
 export const revalidate = 0
 
 export default async function BoardDetail({ params: { slug } }) {
+  // 보드 정보
   const { data: boards } = await supabase.from('boards').select('*').eq('slug', slug).limit(1)
   const board = boards?.[0]
   if (!board) return <main className="p-4">보드를 찾을 수 없습니다.</main>
 
+  // 트렌딩 + 최신 + 상단고정 정렬
   const { data: posts } = await supabase
-    .from('posts')
+    .from('post_ranking')
     .select('*')
     .eq('board_id', board.id)
+    .order('is_pinned', { ascending: false })
+    .order('score', { ascending: false })
     .order('created_at', { ascending: false })
 
-  const themes = {
-    swimming:   { icon: '🏊', bg: 'bg-blue-50', text: 'text-blue-700' },
-    soccer:     { icon: '⚽', bg: 'bg-gray-100', text: 'text-gray-900' }, // 축구: 다크
-    basketball: { icon: '🏀', bg: 'bg-orange-50', text: 'text-orange-700' },
-    baseball:   { icon: '⚾', bg: 'bg-gray-50', text: 'text-gray-700' },
-    tennis:     { icon: '🎾', bg: 'bg-lime-50', text: 'text-lime-700' },
-    badminton:  { icon: '🏸', bg: 'bg-pink-50', text: 'text-pink-700' },
-    crossfit:   { icon: '🏋️‍♀️', bg: 'bg-amber-50', text: 'text-amber-700' },
-    fitness:    { icon: '💪', bg: 'bg-brand-50', text: 'text-brand-700' },
-    running:    { icon: '🏃', bg: 'bg-cyan-50', text: 'text-cyan-700' },
-    climbing:   { icon: '🧗', bg: 'bg-purple-50', text: 'text-purple-700' },
-  }
-  const t = themes[slug] || { icon: '🏅', bg: 'bg-gray-50', text: 'text-gray-700' }
-
   return (
-    <main className="max-w-3xl mx-auto p-4 md:p-6">
-      <div className={`flex items-center gap-3 md:gap-4 p-3 md:p-4 mb-4 md:mb-6 rounded-2xl border ${t.bg}`}>
-        <div className={`text-2xl md:text-3xl ${t.text}`}>{t.icon}</div>
+    <main className="max-w-3xl mx-auto p-4 md:p-6 grid gap-4">
+      {/* 상단 보드 헤더 */}
+      <div className="flex items-center justify-between">
         <div>
-          <h1 className={`text-lg md:text-xl font-bold ${t.text}`}>{board.name}</h1>
+          <h1 className="text-xl md:text-2xl font-bold">{board.name}</h1>
           <p className="text-xs md:text-sm text-gray-600">#{slug} 게시판</p>
         </div>
+        <Link
+          href={`/boards/${slug}/write`}
+          className="btn btn-primary text-sm md:text-base"
+        >
+          글쓰기
+        </Link>
       </div>
 
-      <ul className="grid gap-3 md:gap-4">
+      {/* 인기/최신 목록 */}
+      <ul className="grid gap-2 md:gap-3">
         {(posts || []).map((p) => (
           <li key={p.id} className="card p-3 md:p-4">
-            <div className="font-semibold text-base md:text-lg">{p.title}</div>
-            <div className="text-gray-700 whitespace-pre-wrap mt-1 text-sm md:text-base">{p.body}</div>
-            <div className="text-xs md:text-sm text-gray-500 mt-1">
-              {p.nickname} · {new Date(p.created_at).toLocaleString()}
-            </div>
+            <div className="flex items-start gap-3">
+              {/* 추천 버튼 */}
+              <div className="pt-1">
+                <VoteButton postId={p.id} count={p.upvotes_count} />
+              </div>
 
-            <PostActions post={p} />
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2">
+                  {p.is_pinned && (
+                    <span className="text-[10px] md:text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border">
+                      고정
+                    </span>
+                  )}
+                  <Link
+                    href={`/boards/${slug}/${p.id}`}
+                    className="font-semibold text-base md:text-lg hover:underline truncate"
+                    title={p.title}
+                  >
+                    {p.title}
+                  </Link>
+                </div>
 
-            <div className="mt-3 md:mt-4">
-              <h4 className="font-medium text-xs md:text-sm text-gray-600 mb-1">댓글</h4>
-              <Comments postId={p.id} />
-              <CommentBox postId={p.id} />
+                <div className="flex flex-wrap gap-3 mt-1 text-[11px] md:text-xs text-gray-500">
+                  <span>{p.nickname || '익명'}</span>
+                  <span>{new Date(p.created_at).toLocaleString()}</span>
+                  <span>추천 {p.upvotes_count}</span>
+                  <span>댓글 {p.comments_count}</span>
+                  <span>조회 {p.views_count}</span>
+                  {/* 디버그용: <span>점수 {Number(p.score).toFixed(1)}</span> */}
+                </div>
+              </div>
             </div>
           </li>
         ))}
       </ul>
-
-      <div className="mt-4 md:mt-6">
-        <ComposePost boardId={board.id} />
-      </div>
     </main>
   )
 }
