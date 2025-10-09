@@ -1,139 +1,108 @@
 'use client'
-import { useState } from 'react'
-import { supabase } from '../lib/supabaseClient.js'
+import { useEffect, useState } from 'react'
+import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
 
-export default function PostActions({ post }) {
-  const router = useRouter()
-  const [editing, setEditing] = useState(false)
-  const [title, setTitle] = useState(post.title)
-  const [body, setBody] = useState(post.body)
-  const [user, setUser] = useState(null)
+const sb = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+)
 
-  // 로그인 사용자 불러오기
-  async function getUser() {
-    const { data } = await supabase.auth.getUser()
-    setUser(data.user)
-    return data.user
+export default function PostActions({ post, slug }) {
+  const router = useRouter()
+  const [user, setUser] = useState(null)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const [loading, setLoading] = useState(false)
+
+  // ✅ 로그인 + 관리자 여부 확인
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const { data: { user } } = await sb.auth.getUser()
+      if (!mounted) return
+      setUser(user || null)
+
+      if (user) {
+        const { data, error } = await sb
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single()
+
+        if (!mounted) return
+        if (error) {
+          console.warn('프로필 조회 실패:', error.message)
+          setIsAdmin(false)
+        } else {
+          setIsAdmin(!!data?.is_admin)
+        }
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  // ✅ 디버그용 표시 (지워도 됨)
+  console.log('user:', user?.email, 'isAdmin:', isAdmin)
+
+  async function togglePin() {
+    if (!isAdmin || loading) return
+    setLoading(true)
+    const { error } = await sb.from('posts').update({ is_pinned: !post.is_pinned }).eq('id', post.id)
+    setLoading(false)
+    if (error) {
+      alert('고정/해제 실패: ' + error.message)
+      console.error(error)
+    } else {
+      router.refresh()
+    }
   }
 
-  // 삭제
-  async function handleDelete() {
-    const user = await getUser()
-    if (!user || user.id !== post.author_id) {
-      alert('삭제 권한이 없습니다.')
-      return
-    }
-    if (!confirm('정말 이 글을 삭제하시겠습니까?')) return
-    const { error } = await supabase.from('posts').delete().eq('id', post.id)
+  async function deletePost() {
+    if (!user || loading) return
+    const confirmDel = confirm('정말 삭제할까요?')
+    if (!confirmDel) return
+    setLoading(true)
+    const { error } = await sb.from('posts').delete().eq('id', post.id)
+    setLoading(false)
     if (error) {
       alert('삭제 실패: ' + error.message)
-      return
+      console.error(error)
+    } else {
+      router.push(`/boards/${slug}`)
+      router.refresh()
     }
-    router.refresh()
-  }
-
-  // 수정 저장
-  async function handleUpdate(e) {
-    e.preventDefault()
-    const user = await getUser()
-    if (!user || user.id !== post.author_id) {
-      alert('수정 권한이 없습니다.')
-      return
-    }
-    const { error } = await supabase
-      .from('posts')
-      .update({ title, body })
-      .eq('id', post.id)
-    if (error) {
-      alert('수정 실패: ' + error.message)
-      return
-    }
-    setEditing(false)
-    router.refresh()
-  }
-
-  if (editing) {
-    return (
-      <form
-        onSubmit={handleUpdate}
-        style={{
-          display: 'grid',
-          gap: 8,
-          border: '1px solid #ddd',
-          borderRadius: 8,
-          padding: 12,
-          background: '#f9fafb',
-          marginTop: 8,
-        }}
-      >
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={{ border: '1px solid #ccc', borderRadius: 6, padding: 6 }}
-        />
-        <textarea
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          rows={3}
-          style={{ border: '1px solid #ccc', borderRadius: 6, padding: 6 }}
-        />
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            type="submit"
-            style={{
-              background: '#059669',
-              color: '#fff',
-              border: 'none',
-              borderRadius: 6,
-              padding: '6px 10px',
-            }}
-          >
-            저장
-          </button>
-          <button
-            type="button"
-            onClick={() => setEditing(false)}
-            style={{
-              background: '#ddd',
-              border: 'none',
-              borderRadius: 6,
-              padding: '6px 10px',
-            }}
-          >
-            취소
-          </button>
-        </div>
-      </form>
-    )
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-      <button
-        onClick={() => setEditing(true)}
-        style={{
-          background: '#e0f2fe',
-          border: '1px solid #bae6fd',
-          borderRadius: 6,
-          padding: '4px 8px',
-          cursor: 'pointer',
-        }}
-      >
-        수정
-      </button>
-      <button
-        onClick={handleDelete}
-        style={{
-          background: '#fee2e2',
-          border: '1px solid #fecaca',
-          borderRadius: 6,
-          padding: '4px 8px',
-          cursor: 'pointer',
-        }}
-      >
-        삭제
-      </button>
+    <div className="flex gap-2 mt-3">
+      {/* ✅ 관리자 여부를 항상 표시 */}
+      <span className="text-xs px-2 py-1 bg-gray-100 rounded border">
+        {isAdmin ? '관리자 계정 ✅' : '관리자 아님 ❌'}
+      </span>
+
+      {/* 관리자만 고정 버튼 표시 */}
+      {isAdmin && (
+        <button
+          onClick={togglePin}
+          className={`text-xs md:text-sm px-3 py-1 rounded-lg border ${
+            post.is_pinned
+              ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          {post.is_pinned ? '📍 고정 해제' : '📌 고정'}
+        </button>
+      )}
+
+      {/* 작성자/관리자만 삭제 버튼 */}
+      {user?.id === post.author_id || isAdmin ? (
+        <button
+          onClick={deletePost}
+          className="text-xs md:text-sm px-3 py-1 rounded-lg border bg-red-50 text-red-700 hover:bg-red-100"
+        >
+          🗑 삭제
+        </button>
+      ) : null}
     </div>
   )
 }
