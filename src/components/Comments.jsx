@@ -1,3 +1,4 @@
+'use client'
 import CommentActions from './CommentActions.jsx'
 
 import { supabase } from '../lib/supabaseClient.js'
