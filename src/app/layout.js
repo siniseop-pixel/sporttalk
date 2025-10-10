@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import RouteDebug from "../components/RouteDebug.jsx";
 import HeaderClient from "../components/HeaderClient.jsx";
 import HeaderBreadcrumb from "../components/HeaderBreadcrumb.jsx";
 
@@ -28,6 +29,8 @@ export default function RootLayout({ children }) {
         <footer className="mx-auto max-w-5xl px-4 py-8 text-xs md:text-sm text-gray-500">
           © {new Date().getFullYear()} Sporttalk
         </footer>
+        {/* 로컬에선 항상, 배포에선 ?debug=1 붙였을 때 표시 */}
+        <RouteDebug />
       </body>
     </html>
   );
