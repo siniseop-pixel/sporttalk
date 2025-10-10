@@ -7,7 +7,7 @@ function Nav() {
   return (
     <header className="border-b bg-white">
       <nav className="max-w-5xl mx-auto p-3 flex items-center gap-4">
-        <a href="/" className="font-bold">🏀 Sporttalk</a>
+        <a href="/" className="font-bold"> Sporttalk</a>
         <a href="/boards" className="text-sm text-gray-700">Boards</a>
         <span className="flex-1" />
         <a href="/auth/signup" className="text-sm">Sign up</a>

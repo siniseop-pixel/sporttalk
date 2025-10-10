@@ -1,14 +1,29 @@
+'use client'
+import { useState } from 'react'
 import { supabase } from '@/lib/supabaseClient.js'
-import WriteForm from '@/components/WriteForm.jsx'
-export const revalidate = 0
 
-export default async function WritePage({ params:{ slug } }) {
-  const { data: board } = await supabase.from('boards').select('id,name,slug').eq('slug', slug).single()
-  if (!board) return <main className="p-4">보드를 찾을 수 없어요.</main>
+export default function WritePage({ params: { slug } }) {
+  const [title, setTitle] = useState('')
+  const [body, setBody]   = useState('')
+  const [nickname, setNickname] = useState('')
+
+  async function onSubmit(e){
+    e.preventDefault()
+    const { data, error } = await supabase
+      .from('posts')
+      .insert({ slug, title, body, nickname })
+      .select('id').single()
+    if (error) return alert(error.message)
+    location.href = `/boards/${slug}/${data.id}`
+  }
+
   return (
-    <main className="max-w-3xl mx-auto p-4 md:p-6">
-      <h1 className="text-xl md:text-2xl font-bold">{board.name} 글쓰기</h1>
-      <WriteForm boardId={board.id} slug={slug}/>
-    </main>
+    <form onSubmit={onSubmit} className="card p-4 grid gap-3 max-w-2xl">
+      <h2 className="font-bold text-lg">글쓰기</h2>
+      <input className="border rounded p-2" placeholder="닉네임(선택)" value={nickname} onChange={e=>setNickname(e.target.value)} />
+      <input className="border rounded p-2" placeholder="제목" value={title} onChange={e=>setTitle(e.target.value)} required />
+      <textarea className="border rounded p-2 h-40" placeholder="내용" value={body} onChange={e=>setBody(e.target.value)} required />
+      <button className="rounded bg-black text-white px-3 py-2">등록</button>
+    </form>
   )
 }
