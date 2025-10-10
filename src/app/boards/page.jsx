@@ -1,4 +1,7 @@
-﻿import { supabase } from "../../lib/supabaseClient.js"
+﻿// src/app/boards/page.jsx
+import { supabase } from "@/lib/supabaseClient.js"
+
+export const revalidate = 0
 
 export default async function BoardsPage() {
   const { data: boards } = await supabase
@@ -21,8 +24,8 @@ export default async function BoardsPage() {
   }
 
   return (
-    <div>
-      <h1 className="text-xl md:text-2xl font-bold text-brand-700">생활체육 커뮤니티</h1>
+    <main className="max-w-4xl mx-auto p-4 md:p-6">
+      <h1 className="text-xl md:text-2xl font-bold text-gray-900">생활체육 커뮤니티</h1>
       <p className="text-gray-600 mt-1 text-sm md:text-base">관심 있는 종목을 선택하세요 🌿</p>
 
       <div className="grid gap-3 md:gap-4 mt-4 md:mt-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -32,7 +35,7 @@ export default async function BoardsPage() {
             <a
               key={b.id}
               href={`/boards/${b.slug}`}
-              className={`card ${t.bg} ${t.hover} transition flex items-center gap-3 md:gap-4 p-3 md:p-4 active:scale-[0.99]`}
+              className={`rounded-2xl border ${t.bg} ${t.hover} transition flex items-center gap-3 md:gap-4 p-3 md:p-4 shadow-sm active:scale-[0.99]`}
             >
               <div className={`text-2xl md:text-3xl ${t.text}`}>{t.icon}</div>
               <div className="min-w-0">
@@ -43,6 +46,6 @@ export default async function BoardsPage() {
           )
         })}
       </div>
-    </div>
+    </main>
   )
 }
