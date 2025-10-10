@@ -1,23 +1,5 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-/* Tailwind v4: 테마 색상은 @theme 에서 선언 */
-@theme {
-  --color-brand-50:  #ecfdf5;
-  --color-brand-100: #d1fae5;
-  --color-brand-200: #a7f3d0;
-  --color-brand-300: #6ee7b7;
-  --color-brand-400: #34d399;
-  --color-brand-500: #10b981; /* 메인 초록 */
-  --color-brand-600: #059669;
-  --color-brand-700: #047857;
-  --color-brand-800: #065f46;
-  --color-brand-900: #064e3b;
-}
-
-/* 기본 스타일/유틸 (원하면 수정 가능) */
-body { @apply bg-white text-gray-900; }
-
-.card { @apply border border-gray-200 rounded-2xl p-4 shadow-sm; }
-.btn  { @apply inline-flex items-center gap-2 rounded-xl px-4 py-2 border border-transparent; }
-.btn-primary { @apply bg-brand-500 text-white hover:bg-brand-600; }
-.btn-ghost   { @apply border-gray-300 hover:bg-gray-50; }
+.card { @apply rounded-2xl border bg-white shadow-sm; }
