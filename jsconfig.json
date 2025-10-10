@@ -1,7 +1,22 @@
 ﻿{
   "compilerOptions": {
     "baseUrl": ".",
-    "paths": { "@/*": ["src/*"] }
+    "paths": {
+      "@/*": ["src/*"]
+    },
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "jsx": "preserve",
+    "allowJs": true,
+    "checkJs": false,
+    "strict": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "skipLibCheck": true
   },
-  "include": ["src", "next-env.d.ts"]
+  "include": ["src", "next-env.d.ts"],
+  "exclude": ["node_modules", ".next", "out"]
 }
+

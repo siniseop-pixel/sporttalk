@@ -1,12 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+import { supabase } from '@/lib/supabaseClient.js'
 
 export default function HeaderClient() {
   const router = useRouter()
@@ -14,13 +9,13 @@ export default function HeaderClient() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      setEmail(data.session?.user?.email ?? null)
+      setEmail(data?.session?.user?.email ?? null)
     })
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setEmail(session?.user?.email ?? null)
       router.refresh()
     })
-    return () => sub.subscription.unsubscribe()
+    return () => sub?.subscription?.unsubscribe()
   }, [router])
 
   async function signOut() {
@@ -30,18 +25,21 @@ export default function HeaderClient() {
   }
 
   return (
-    <nav style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-      <a href="/boards" style={{ textDecoration: 'none', color: '#111' }}>Boards</a>
+    <nav className="flex items-center gap-3">
+      <a href="/boards" className="text-sm text-gray-900 no-underline">Boards</a>
+
       {email ? (
         <>
-          <span style={{ fontSize: 13, color: '#555' }}>{email}</span>
-          <button onClick={signOut}
-            style={{ padding:'6px 10px', borderRadius:8, border:'1px solid #ddd', background:'#fff', cursor:'pointer' }}>
+          <span className="text-xs md:text-sm text-gray-600">{email}</span>
+          <button
+            onClick={signOut}
+            className="text-sm rounded-md border px-3 py-1 bg-white active:scale-95"
+          >
             로그아웃
           </button>
         </>
       ) : (
-        <a href="/auth" style={{ textDecoration: 'none', color: '#111' }}>Auth</a>
+        <a href="/auth" className="text-sm text-gray-900 no-underline">Auth</a>
       )}
     </nav>
   )

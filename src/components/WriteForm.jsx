@@ -1,49 +1,109 @@
+// src/components/WriteForm.jsx
 'use client'
 import { useState } from 'react'
-import { createClient } from '@supabase/supabase-js'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient.js'
 
-const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
-
-export default function WriteForm({ boardId, slug }) {
-  const r = useRouter()
+export default function WriteForm({ slug }) {
+  const router = useRouter()
   const [title, setTitle] = useState('')
-  const [body, setBody] = useState('')
+  const [body, setBody]   = useState('')
   const [files, setFiles] = useState([])
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
+    if (loading) return
+    const titleTrim = title.trim()
+    const bodyTrim  = body.trim()
+    if (!titleTrim) return alert('제목을 입력해 주세요.')
+
     setLoading(true)
-    const { data:{ user } } = await sb.auth.getUser()
-    if (!user) { alert('로그인이 필요합니다.'); setLoading(false); return }
+    try {
+      // 로그인 필수 (익명 허용 원하면 이 부분 조정)
+      const { data: u } = await supabase.auth.getUser()
+      const user = u?.user
+      if (!user) throw new Error('로그인이 필요합니다.')
 
-    const urls = []
-    for (const f of files) {
-      const path = `${user.id}/${Date.now()}-${f.name}`
-      const up = await sb.storage.from('images-public').upload(path, f, { upsert:false })
-      if (!up.error) {
-        urls.push(sb.storage.from('images-public').getPublicUrl(up.data.path).data.publicUrl)
+      // 이미지 업로드 (public 버킷: images-public)
+      let urls = []
+      if (files.length) {
+        const uploads = files.map(async (f) => {
+          const path = `${user.id}/${Date.now()}-${encodeURIComponent(f.name)}`
+          const up = await supabase
+            .storage
+            .from('images-public')
+            .upload(path, f, { upsert: false, contentType: f.type || 'application/octet-stream' })
+          if (up.error) throw up.error
+          const { data } = supabase.storage.from('images-public').getPublicUrl(up.data.path)
+          return data.publicUrl
+        })
+        urls = await Promise.all(uploads)
       }
+
+      // 게시글 저장 (slug 기준으로 통일)
+      const { data, error } = await supabase
+        .from('posts')
+        .insert({
+          slug,
+          author_id: user.id,
+          nickname: user.email ?? null,
+          title: titleTrim,
+          body: bodyTrim,
+          image_urls: urls.length ? urls : null,
+        })
+        .select('id')
+        .single()
+
+      if (error) throw error
+
+      // 이동
+      router.push(`/boards/${slug}/${data.id}`)
+      router.refresh()
+      setTitle('')
+      setBody('')
+      setFiles([])
+    } catch (err) {
+      alert('게시글 저장 실패: ' + (err?.message || err))
+    } finally {
+      setLoading(false)
     }
-
-    const { data, error } = await sb.from('posts').insert({
-      board_id: boardId, author_id: user.id, nickname: user.email,
-      title, body, image_urls: urls
-    }).select('id').single()
-
-    setLoading(false)
-    if (error) { alert('게시글 저장 실패: '+error.message); return }
-    r.push(`/boards/${slug}/${data.id}`); r.refresh()
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card p-3 grid gap-3">
-      <input className="border rounded-xl px-3 py-2" placeholder="제목" value={title} onChange={e=>setTitle(e.target.value)} required/>
-      <textarea className="border rounded-xl px-3 py-2" rows={8} placeholder="내용" value={body} onChange={e=>setBody(e.target.value)}/>
-      <input type="file" multiple accept="image/*" onChange={e=>setFiles(Array.from(e.target.files||[]))}/>
+    <form onSubmit={handleSubmit} className="card p-4 grid gap-3 max-w-2xl">
+      <h2 className="font-bold text-lg">글쓰기</h2>
+
+      <input
+        className="border rounded-xl px-3 py-2"
+        placeholder="제목"
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        required
+      />
+
+      <textarea
+        className="border rounded-xl px-3 py-2 min-h-48"
+        placeholder="내용"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+      />
+
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={(e) => setFiles(Array.from(e.target.files || []))}
+        className="text-sm"
+      />
+
       <div className="flex justify-end">
-        <button className="btn btn-primary" disabled={loading}>{loading?'등록 중…':'등록'}</button>
+        <button
+          className="rounded bg-black text-white px-4 py-2 text-sm md:text-base active:scale-95 disabled:opacity-70"
+          disabled={loading}
+        >
+          {loading ? '등록 중…' : '등록'}
+        </button>
       </div>
     </form>
   )

@@ -1,13 +1,7 @@
-// src/components/TogglePinButton.jsx
 'use client'
-import { createClient } from '@supabase/supabase-js'
-import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
-const sb = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-)
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient.js'
 
 export default function TogglePinButton({ postId, isPinned }) {
   const router = useRouter()
@@ -16,47 +10,70 @@ export default function TogglePinButton({ postId, isPinned }) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      const { data: { user } } = await sb.auth.getUser()
-      if (!mounted) return
-      setUser(user || null)
-      if (user) {
-        const { data, error } = await sb
+    let alive = true
+
+    async function fetchSession() {
+      const { data } = await supabase.auth.getUser()
+      if (!alive) return
+      setUser(data?.user ?? null)
+
+      if (data?.user) {
+        const { data: prof, error } = await supabase
           .from('profiles')
           .select('is_admin')
-          .eq('id', user.id)
+          .eq('id', data.user.id)
           .single()
-        if (!mounted) return
+        if (!alive) return
         if (error) {
           console.error('[profiles select error]', error)
           setIsAdmin(false)
         } else {
-          setIsAdmin(!!data?.is_admin)
+          setIsAdmin(!!prof?.is_admin)
         }
       } else {
         setIsAdmin(false)
       }
-    })()
-    return () => { mounted = false }
-  }, [])
+    }
+
+    fetchSession()
+    const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
+      setUser(session?.user ?? null)
+      // 세션 바뀌면 관리자 여부 다시 조회
+      if (session?.user) {
+        supabase
+          .from('profiles')
+          .select('is_admin')
+          .eq('id', session.user.id)
+          .single()
+          .then(({ data, error }) => setIsAdmin(error ? false : !!data?.is_admin))
+      } else {
+        setIsAdmin(false)
+      }
+      router.refresh()
+    })
+
+    return () => {
+      alive = false
+      sub?.subscription?.unsubscribe()
+    }
+  }, [router])
 
   async function togglePin() {
     if (!user || !isAdmin || loading) return
     setLoading(true)
-    const { error } = await sb.from('posts').update({ is_pinned: !isPinned }).eq('id', postId)
-    setLoading(false)
-    if (error) {
-      alert('고정 상태 변경 실패: ' + error.message)
-      console.error(error)
-    } else {
+    try {
+      const { error } = await supabase.rpc('set_post_pin', { p_post: Number(postId) })
+      if (error) throw error
       router.refresh()
+    } catch (err) {
+      alert('고정 상태 변경 실패: ' + err.message)
+      console.error(err)
+    } finally {
+      setLoading(false)
     }
   }
 
-  // ── 디버그 배지: 현재 상태가 뭔지 항상 보여줌
-  const badge =
-    isAdmin === null ? '확인 중…' : isAdmin ? '관리자' : '관리자 아님'
+  const badge = isAdmin === null ? '확인 중…' : isAdmin ? '관리자' : '관리자 아님'
 
   return (
     <div className="flex items-center gap-2">
@@ -76,11 +93,11 @@ export default function TogglePinButton({ postId, isPinned }) {
           isPinned
             ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-        } ${!isAdmin ? 'opacity-50 cursor-not-allowed' : ''}`}
+        } ${!isAdmin || loading ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
+        aria-disabled={!isAdmin || loading}
       >
         {isPinned ? '📍 고정 해제하기' : '📌 고정하기'}
       </button>
     </div>
   )
 }
-
