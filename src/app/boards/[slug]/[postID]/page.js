@@ -1,8 +1,8 @@
-import { supabase } from '../../../../../lib/supabaseClient.js'
-import Comments from '../../../../../components/Comments.jsx'
-import CommentBox from '../../../../../components/CommentBox.jsx'
-import PostActions from '../../../../../components/PostActions.jsx'
-import AdSlot from '../../../../../components/AdSlot.jsx'
+import { supabase } from '@/lib/supabaseClient.js'
+import Comments from '@/components/Comments.jsx'
+import CommentBox from '@/components/CommentBox.jsx'
+import PostActions from '@/components/PostActions.jsx'
+import AdSlot from '@/components/AdSlot.jsx'
 
 export const revalidate = 0
 
