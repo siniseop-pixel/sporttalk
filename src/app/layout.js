@@ -1,8 +1,8 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import RouteDebug from "../components/RouteDebug.jsx";
-import HeaderClient from "../components/HeaderClient.jsx";
-import HeaderBreadcrumb from "../components/HeaderBreadcrumb.jsx";
+import RouteDebug from "@/components/RouteDebug.jsx";
+import HeaderClient from "@/components/HeaderClient.jsx";
+import HeaderBreadcrumb from "@/components/HeaderBreadcrumb.jsx";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });

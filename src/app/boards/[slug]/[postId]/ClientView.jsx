@@ -12,7 +12,7 @@ export default function ClientView({ params }) {
       <p>
         slug: <b>{params.slug}</b>
         <br />
-        postID: <b>{params.postID}</b>
+        postId: <b>{params.postId}</b>
         <br />
         query: <b>{query}</b>
       </p>

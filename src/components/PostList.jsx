@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { supabase } from '../lib/supabaseClient'
+import { supabase } from '@/lib/supabaseClient'
 
 export default async function PostList({ boardId }) {
   const { data: posts } = await supabase

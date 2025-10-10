@@ -1,8 +1,8 @@
-import { supabase } from '../../../lib/supabaseClient.js'
+import { supabase } from '@/lib/supabaseClient.js'
 import Link from 'next/link'
-import VoteButton from '../../../components/VoteButton.jsx'
-import AdSlot from '../../../components/AdSlot.jsx'
-import SurveyWidget from '../../../components/SurveyWidget.jsx'
+import VoteButton from '@/components/VoteButton.jsx'
+import AdSlot from '@/components/AdSlot.jsx'
+import SurveyWidget from '@/components/SurveyWidget.jsx'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0

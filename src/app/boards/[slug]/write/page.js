@@ -1,5 +1,5 @@
-import { supabase } from '../../../../lib/supabaseClient.js'
-import WriteForm from '../../../../components/WriteForm.jsx'
+import { supabase } from '@/lib/supabaseClient.js'
+import WriteForm from '@/components/WriteForm.jsx'
 export const revalidate = 0
 
 export default async function WritePage({ params:{ slug } }) {
