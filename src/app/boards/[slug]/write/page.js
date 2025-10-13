@@ -1,11 +1,14 @@
-'use client'
-import { useState } from 'react'
-import { supabase } from '@/lib/supabaseClient.js'
+'use client';
 
-export default function WritePage({ params: { slug } }) {
-  const [title, setTitle] = useState('')
-  const [body, setBody]   = useState('')
-  const [nickname, setNickname] = useState('')
+import { use, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient.js';
+
+export default function WritePage({ params }) {
+  const { slug } = use(params); // ✅ Next 15: params Promise 언랩
+
+  const [title, setTitle] = useState('');
+  const [body, setBody] = useState('');
+  const [nickname, setNickname] = useState('');
 
   async function onSubmit(e){
     e.preventDefault()

@@ -67,3 +67,5 @@ public/uploads/
 tmp/
 .cache/
 *.sqlite3
+
+.vercel
