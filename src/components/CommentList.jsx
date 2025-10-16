@@ -3,43 +3,35 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient.js'
 
 export default function CommentList({ postId }) {
-  const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [items, setItems] = useState([])
+  const [err, setErr] = useState(null)
 
   useEffect(() => {
     let alive = true
     ;(async () => {
-      setLoading(true)
-      setError('')
+      setErr(null)
       const { data, error } = await supabase
         .from('comments')
-        .select('id,body,nickname,created_at')
-        .eq('post_id', Number(postId))
+        .select('id, post_id, author_id, nickname, body, created_at')
+        .eq('post_id', postId)                // ❌ Number() 금지
         .order('created_at', { ascending: true })
 
-      if (!alive) return
-      if (error) setError(error.message)
-      setRows(data || [])
-      setLoading(false)
+      if (error) setErr(error.message)
+      else if (alive) setItems(data ?? [])
     })()
-    return () => {
-      alive = false
-    }
+    return () => { alive = false }
   }, [postId])
 
-  if (loading) return <div className="text-sm text-gray-500">불러오는 중…</div>
-  if (error)   return <div className="text-sm text-red-600">댓글 로드 오류: {error}</div>
-  if (!rows.length) return <div className="text-sm text-gray-500">첫 댓글을 남겨보세요!</div>
+  if (err) return <div className="text-sm text-red-600">댓글 로드 오류: {err}</div>
 
   return (
-    <ul className="divide-y">
-      {rows.map(c => (
-        <li key={c.id} className="py-2">
-          <div className="text-sm">{c.body}</div>
-          <div className="text-xs text-gray-500 mt-0.5">
+    <ul className="space-y-3">
+      {items.map(c => (
+        <li key={c.id} className="border rounded-lg p-2">
+          <div className="text-xs text-gray-500">
             {c.nickname || '익명'} · {new Date(c.created_at).toLocaleString()}
           </div>
+          <div className="mt-1 whitespace-pre-wrap text-sm">{c.body}</div>
         </li>
       ))}
     </ul>

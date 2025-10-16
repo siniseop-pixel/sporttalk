@@ -1,3 +1,4 @@
+// src/components/TogglePinButton.jsx
 'use client'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -6,13 +7,14 @@ import { supabase } from '@/lib/supabaseClient.js'
 export default function TogglePinButton({ postId, isPinned }) {
   const router = useRouter()
   const [user, setUser] = useState(null)
-  const [isAdmin, setIsAdmin] = useState(null) // null=로딩, true/false=결과
+  const [isAdmin, setIsAdmin] = useState(null) // null=로딩
   const [loading, setLoading] = useState(false)
+  const [pinned, setPinned] = useState(!!isPinned) // ✅ 로컬 상태로 현재 고정여부 관리
 
   useEffect(() => {
     let alive = true
 
-    async function fetchSession() {
+    async function load() {
       const { data } = await supabase.auth.getUser()
       if (!alive) return
       setUser(data?.user ?? null)
@@ -23,22 +25,18 @@ export default function TogglePinButton({ postId, isPinned }) {
           .select('is_admin')
           .eq('id', data.user.id)
           .single()
+
         if (!alive) return
-        if (error) {
-          console.error('[profiles select error]', error)
-          setIsAdmin(false)
-        } else {
-          setIsAdmin(!!prof?.is_admin)
-        }
+        setIsAdmin(error ? false : !!prof?.is_admin)
       } else {
         setIsAdmin(false)
       }
     }
 
-    fetchSession()
+    load()
+
     const { data: sub } = supabase.auth.onAuthStateChange((_e, session) => {
       setUser(session?.user ?? null)
-      // 세션 바뀌면 관리자 여부 다시 조회
       if (session?.user) {
         supabase
           .from('profiles')
@@ -62,11 +60,18 @@ export default function TogglePinButton({ postId, isPinned }) {
     if (!user || !isAdmin || loading) return
     setLoading(true)
     try {
-      const { error } = await supabase.rpc('set_post_pin', { p_post: Number(postId) })
+      // ✅ uuid + boolean 두 인수 모두 전달
+      const { error } = await supabase.rpc('set_post_pin', {
+        p_post: String(postId),   // uuid
+        p_value: !pinned          // 바꿀 값
+      })
       if (error) throw error
+
+      // ✅ 낙관적 업데이트 + 서버 새로고침
+      setPinned((v) => !v)
       router.refresh()
     } catch (err) {
-      alert('고정 상태 변경 실패: ' + err.message)
+      alert('고정 상태 변경 실패: ' + (err?.message || String(err)))
       console.error(err)
     } finally {
       setLoading(false)
@@ -90,13 +95,13 @@ export default function TogglePinButton({ postId, isPinned }) {
         onClick={togglePin}
         disabled={!isAdmin || loading}
         className={`text-xs md:text-sm px-3 py-1 rounded-lg border ${
-          isPinned
+          pinned
             ? 'bg-amber-100 text-amber-800 hover:bg-amber-200'
             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
         } ${!isAdmin || loading ? 'opacity-50 cursor-not-allowed' : 'active:scale-95'}`}
         aria-disabled={!isAdmin || loading}
       >
-        {isPinned ? '📍 고정 해제하기' : '📌 고정하기'}
+        {pinned ? '📍 고정 해제하기' : '📌 고정하기'}
       </button>
     </div>
   )

@@ -21,7 +21,7 @@ export default function VoteButton({ postId, count = 0 }) {
       }
 
       const { error } = await supabase.rpc('upvote_post', {
-        p_post: Number(postId),
+        p_post: postId,
         p_user: user.id,
       })
 

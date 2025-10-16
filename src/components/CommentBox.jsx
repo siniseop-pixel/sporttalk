@@ -1,65 +1,64 @@
 'use client'
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient.js'
 
 export default function CommentBox({ postId }) {
-  const router = useRouter()
-  const [text, setText] = useState('')
   const [nickname, setNickname] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [body, setBody] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [err, setErr] = useState(null)
 
-  async function onSubmit(e) {
-    e.preventDefault()
-    const body = (text ?? '').trim()
-    if (!body || busy) return
+  async function submit() {
+    if (loading) return
+    const text = body.trim()
+    if (!text) return
 
-    setBusy(true)
-    // 로그인 사용자면 author_id 저장 (익명 허용 시 null도 가능)
-    const { data: userData } = await supabase.auth.getUser()
-    const author_id = userData?.user?.id ?? null
+    setLoading(true)
+    setErr(null)
+    try {
+      const { data: u } = await supabase.auth.getUser()
+      const user = u?.user || null
 
-    const payload = {
-      post_id: Number(postId),   // DB가 int면 숫자로
-      body,
-      nickname: (nickname ?? '').trim() || null,
-      author_id,                 // RLS/권한과 연동 시 유용
+      const { error } = await supabase.from('comments').insert({
+        post_id: postId,                 // ❌ Number() 금지
+        author_id: user?.id ?? null,     // uuid
+        nickname: nickname || user?.email || null,
+        body: text,
+      })
+      if (error) throw error
+
+      setBody('')
+      // 댓글 목록 새로 고침은 상위에서 하거나, 여기서 location.reload() 대신
+      // 상태 끌어올리기/콜백으로 처리해도 OK
+    } catch (e) {
+      setErr(e.message || String(e))
+    } finally {
+      setLoading(false)
     }
-
-    const { error } = await supabase.from('comments').insert(payload)
-    setBusy(false)
-
-    if (error) {
-      alert(error.message)
-      return
-    }
-
-    setText('')
-    router.refresh()            // ✅ App Router 방식의 갱신
   }
 
   return (
-    <form onSubmit={onSubmit} className="flex flex-col gap-2">
+    <div>
+      {err && <div className="text-sm text-red-600 mb-2">댓글 로드 오류: {err}</div>}
       <input
-        className="border rounded p-2 text-sm"
+        className="border rounded px-2 py-1 text-sm w-full mb-2"
         placeholder="닉네임(선택)"
         value={nickname}
         onChange={(e) => setNickname(e.target.value)}
       />
-      <div className="flex gap-2">
-        <input
-          className="flex-1 border rounded p-2 text-sm"
-          placeholder="댓글을 입력하세요"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button
-          disabled={busy}
-          className="px-3 py-2 rounded bg-black text-white text-sm active:scale-95 disabled:opacity-70"
-        >
-          {busy ? '등록 중…' : '등록'}
-        </button>
-      </div>
-    </form>
+      <input
+        className="border rounded px-2 py-2 text-sm w-full"
+        placeholder="댓글을 입력하세요"
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
+      />
+      <button
+        className="ml-2 mt-2 px-3 py-1 rounded bg-black text-white text-sm active:scale-95 disabled:opacity-60"
+        onClick={submit}
+        disabled={loading}
+      >
+        등록
+      </button>
+    </div>
   )
 }
