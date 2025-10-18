@@ -1,42 +1,60 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabaseClient.js';
 
 export default function LikeButton({ postId, initialCount = 0 }) {
-  const [count, setCount] = useState(initialCount);
+  const [count, setCount] = useState(initialCount);   // 첫 렌더용만 사용, 곧바로 DB값으로 대체
   const [liked, setLiked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState(null);
 
-  // 로그인 사용자 id 얻기
-  async function getUserId() {
+  // 현재 로그인 유저 id
+  const getUserId = useCallback(async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    return user?.id ?? null; // Supabase v2: user.id는 uuid
-  }
+    return user?.id ?? null; // uuid
+  }, []);
 
-  // ✅ 현재 사용자가 좋아요 했는지 확인 (id 컬럼 조회 금지)
+  // DB에서 총개수 + 내 좋아요 여부 재조회
+  const refresh = useCallback(async () => {
+    setErr(null);
+    const uid = await getUserId();
+
+    // 총 개수
+    const totalQ = supabase
+      .from('post_likes')
+      .select('*', { head: true, count: 'exact' })
+      .eq('post_id', String(postId));
+
+    // 내 좋아요 여부
+    const mineQ = uid
+      ? supabase
+          .from('post_likes')
+          .select('*', { head: true, count: 'exact' })
+          .eq('post_id', String(postId))
+          .eq('user_id', uid)
+      : null;
+
+    const [totalRes, mineRes] = await Promise.all([totalQ, mineQ]);
+    if (totalRes.error) setErr(totalRes.error.message);
+    setCount(totalRes.count ?? 0);
+    setLiked(((mineRes?.count) ?? 0) > 0);
+  }, [getUserId, postId]);
+
   useEffect(() => {
     let alive = true;
-    (async () => {
-      setErr(null);
-      const uid = await getUserId();
-      if (!uid) return; // 비로그인 사용자는 기본 false
-      const { count: c, error } = await supabase
-        .from('post_likes')
-        .select('*', { head: true, count: 'exact' })
-        .eq('post_id', postId)
-        .eq('user_id', uid);
+    (async () => { if (alive) await refresh(); })();
 
-      if (!alive) return;
-      if (error) setErr(error.message);
-      else setLiked((c ?? 0) > 0);
-    })();
-    return () => { alive = false; };
-  }, [postId]);
+    // 로그인 상태 바뀌면 다시 조회
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      if (alive) refresh();
+    });
 
-  // ✅ 토글
-  async function toggle() {
+    return () => { alive = false; sub?.subscription?.unsubscribe(); };
+  }, [refresh]);
+
+  // 토글
+  const toggle = async () => {
     setBusy(true);
     setErr(null);
     try {
@@ -44,48 +62,43 @@ export default function LikeButton({ postId, initialCount = 0 }) {
       if (!uid) throw new Error('로그인이 필요합니다.');
 
       if (!liked) {
-        // 좋아요 추가 (복합 PK: post_id + user_id)
+        // 좋아요 추가 (unique(post_id, user_id))
         const { error } = await supabase
           .from('post_likes')
-          .insert([{ post_id: postId, user_id: uid }]); // returning 불필요
-
+          .insert([{ post_id: String(postId), user_id: uid }]); // returning 최소화
         if (error) throw error;
-        setLiked(true);
-        setCount((v) => v + 1);
       } else {
         // 좋아요 취소
         const { error } = await supabase
           .from('post_likes')
           .delete()
-          .eq('post_id', postId)
+          .eq('post_id', String(postId))
           .eq('user_id', uid);
-
         if (error) throw error;
-        setLiked(false);
-        setCount((v) => Math.max(0, v - 1));
       }
+
+      // 낙관적 증가/감소 대신 → 실제 DB값 재조회(새로고침해도 유지)
+      await refresh();
     } catch (e) {
       setErr(e.message || String(e));
     } finally {
       setBusy(false);
     }
-  }
+  };
 
   return (
     <div className="inline-flex items-center gap-2">
       <button
         onClick={toggle}
         disabled={busy}
-        className={`rounded-full border px-3 py-1 text-sm ${liked ? 'bg-yellow-50 border-yellow-300' : 'bg-white'}`}
+        className={`rounded-full border px-3 py-1 text-sm ${
+          liked ? 'bg-yellow-50 border-yellow-300' : 'bg-white'
+        } ${busy ? 'opacity-60 cursor-not-allowed' : ''}`}
         aria-pressed={liked}
       >
         👍 좋아요 {count}
       </button>
-      {err && (
-        <span className="text-xs text-red-600">
-          {err}
-        </span>
-      )}
+      {err && <span className="text-xs text-red-600">{err}</span>}
     </div>
   );
 }
