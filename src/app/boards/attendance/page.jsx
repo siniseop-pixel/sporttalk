@@ -14,7 +14,12 @@ export default async function AttendancePage() {
   const supabase = getServerClient();
   if (!supabase) notFound();
 
-  // 출석 게시판의 게시글들 가져오기
+  // 오늘 날짜 계산
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).toISOString();
+  const todayEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1).toISOString();
+
+  // 오늘 날짜의 출석 게시글만 가져오기
   const { data: posts, error } = await supabase
     .from('posts')
     .select(`
@@ -23,6 +28,8 @@ export default async function AttendancePage() {
       comments:comments(count)
     `)
     .eq('slug', 'attendance')
+    .gte('created_at', todayStart)
+    .lt('created_at', todayEnd)
     .order('is_pinned', { ascending: false })
     .order('created_at', { ascending: false })
     .limit(50);
