@@ -4,6 +4,7 @@ export const revalidate = 0;
 
 import BoardClient from './BoardClient';
 
-export default function BoardList({ params: { slug } }) {
+export default async function BoardList({ params }) {
+  const { slug } = await params;
   return <BoardClient slug={slug} />;
 }

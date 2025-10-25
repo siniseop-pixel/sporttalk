@@ -11,8 +11,7 @@ import HeaderBreadcrumb from '@/components/HeaderBreadcrumb.jsx';
 import TogglePinButton from '@/components/TogglePinButton.jsx';
 import VoteButton from '@/components/VoteButton.jsx';
 import LikeButton from '@/components/LikeButton.jsx';
-import CommentList from '@/components/CommentList.jsx';
-import CommentBox from '@/components/CommentBox.jsx';
+import CommentSection from '@/components/CommentSection.jsx';
 import PostImageGrid from '@/components/PostImageGrid.jsx';
 import DeletePostButton from '@/components/DeletePostButton.jsx';
 
@@ -90,13 +89,7 @@ export default async function Page({ params }) {
         </div>
 
         {/* 댓글 */}
-        <section className="mt-8">
-          <h2 className="text-sm font-semibold mb-2">댓글</h2>
-          <CommentList postId={post.id} />
-          <div className="mt-3">
-            <CommentBox postId={post.id} />
-          </div>
-        </section>
+        <CommentSection postId={post.id} />
       </main>
     </>
   );

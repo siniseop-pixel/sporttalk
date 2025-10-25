@@ -3,16 +3,20 @@ import { useMemo } from 'react'
 import { usePathname } from 'next/navigation'
 
 const THEMES = {
-  swimming:   { icon: '🏊', name: '수영',         text: 'text-blue-700',   bg: 'bg-blue-50' },
-  soccer:     { icon: '⚽', name: '축구',         text: 'text-gray-900',   bg: 'bg-gray-100' },
-  basketball: { icon: '🏀', name: '농구',         text: 'text-orange-700', bg: 'bg-orange-50' },
-  baseball:   { icon: '⚾', name: '야구',         text: 'text-gray-700',   bg: 'bg-gray-50' },
-  tennis:     { icon: '🎾', name: '테니스',       text: 'text-lime-700',   bg: 'bg-lime-50' },
-  badminton:  { icon: '🏸', name: '배드민턴',     text: 'text-pink-700',   bg: 'bg-pink-50' },
-  crossfit:   { icon: '🏋️‍♀️', name: '크로스핏',   text: 'text-amber-700',  bg: 'bg-amber-50' },
-  fitness:    { icon: '💪', name: '헬스·웨이트',  text: 'text-gray-700',   bg: 'bg-gray-50' }, // ← 기본 팔레트로 통일
-  running:    { icon: '🏃', name: '러닝·마라톤',   text: 'text-cyan-700',   bg: 'bg-cyan-50' },
-  climbing:   { icon: '🧗', name: '클라이밍',     text: 'text-purple-700', bg: 'bg-purple-50' },
+  swimming:   { icon: '🏊', name: '수영',      text: 'text-blue-700',   bg: 'bg-blue-50' },
+  soccer:     { icon: '⚽', name: '축구',      text: 'text-gray-900',   bg: 'bg-gray-100' },
+  basketball: { icon: '🏀', name: '농구',      text: 'text-orange-700', bg: 'bg-orange-50' },
+  baseball:   { icon: '⚾', name: '야구',      text: 'text-gray-700',   bg: 'bg-gray-50' },
+  tennis:     { icon: '🎾', name: '테니스',    text: 'text-lime-700',   bg: 'bg-lime-50' },
+  badminton:  { icon: '🏸', name: '배드민턴',  text: 'text-pink-700',   bg: 'bg-pink-50' },
+  fitness:    { icon: '💪', name: '웨이트',    text: 'text-gray-700',   bg: 'bg-gray-50' },
+  running:    { icon: '🏃', name: '러닝',      text: 'text-cyan-700',   bg: 'bg-cyan-50' },
+  climbing:   { icon: '🧗', name: '클라이밍',  text: 'text-purple-700', bg: 'bg-purple-50' },
+  golf:       { icon: '⛳', name: '골프',      text: 'text-green-700',  bg: 'bg-green-50' },
+  volleyball: { icon: '🏐', name: '배구',      text: 'text-yellow-700', bg: 'bg-yellow-50' },
+  cycling:    { icon: '🚴', name: '사이클',    text: 'text-blue-700',   bg: 'bg-blue-50' },
+  tabletennis:{ icon: '🏓', name: '탁구',      text: 'text-orange-700', bg: 'bg-orange-50' },
+  wintersports:{ icon: '⛷️', name: '동계스포츠', text: 'text-sky-700',    bg: 'bg-sky-50' },
 }
 
 export default function HeaderBreadcrumb() {

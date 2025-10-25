@@ -35,10 +35,14 @@ export default function BoardsClient() {
     baseball: { icon: '⚾', bg: 'bg-gray-50', text: 'text-gray-700', hover: 'hover:bg-gray-100' },
     tennis: { icon: '🎾', bg: 'bg-lime-50', text: 'text-lime-700', hover: 'hover:bg-lime-100' },
     badminton: { icon: '🏸', bg: 'bg-pink-50', text: 'text-pink-700', hover: 'hover:bg-pink-100' },
-    crossfit: { icon: '🏋️‍♀️', bg: 'bg-amber-50', text: 'text-amber-700', hover: 'hover:bg-amber-100' },
     fitness: { icon: '💪', bg: 'bg-gray-50', text: 'text-gray-700', hover: 'hover:bg-gray-100' },
     running: { icon: '🏃', bg: 'bg-cyan-50', text: 'text-cyan-700', hover: 'hover:bg-cyan-100' },
     climbing: { icon: '🧗', bg: 'bg-purple-50', text: 'text-purple-700', hover: 'hover:bg-purple-100' },
+    golf: { icon: '⛳', bg: 'bg-green-50', text: 'text-green-700', hover: 'hover:bg-green-100' },
+    volleyball: { icon: '🏐', bg: 'bg-yellow-50', text: 'text-yellow-700', hover: 'hover:bg-yellow-100' },
+    cycling: { icon: '🚴', bg: 'bg-blue-50', text: 'text-blue-700', hover: 'hover:bg-blue-100' },
+    tabletennis: { icon: '🏓', bg: 'bg-orange-50', text: 'text-orange-700', hover: 'hover:bg-orange-100' },
+    wintersports: { icon: '⛷️', bg: 'bg-sky-50', text: 'text-sky-700', hover: 'hover:bg-sky-100' },
   };
 
   return (

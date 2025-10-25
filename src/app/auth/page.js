@@ -28,8 +28,11 @@ export default function AuthPage() {
       if (mode === 'login') {
         const { error } = await supabase.auth.signInWithPassword({ email, password })
         if (error) throw error
-        router.push('/')     // ✅ 로그인 성공 → 홈으로
-        router.refresh()
+        setMessage('✅ 로그인 성공!')
+        setTimeout(() => {
+          router.push('/')
+          router.refresh()
+        }, 500)
         return
       }
       if (mode === 'signup') {

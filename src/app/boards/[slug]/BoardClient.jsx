@@ -6,11 +6,17 @@ import Link from 'next/link'
 import { supabase } from '@/lib/supabaseClient.js'
 import VoteButton from '@/components/VoteButton.jsx'
 import LikeButton from '@/components/LikeButton.jsx'
+import ViewCounter from '@/components/ViewCounter.jsx'
+import SimpleDeleteButton from '@/components/SimpleDeleteButton.jsx'
 
 export default function BoardClient({ slug }) {
   const [posts, setPosts] = useState([])
   const [err, setErr] = useState(null)
   const [loading, setLoading] = useState(true)
+
+  const handleDelete = (postId) => {
+    setPosts(posts.filter(p => p.id !== postId))
+  }
 
   useEffect(() => {
     let alive = true
@@ -22,8 +28,8 @@ export default function BoardClient({ slug }) {
         const { data, error } = await supabase
           .from('posts')
           .select(`
-            id, slug, title, nickname, created_at, is_pinned,
-            like_count, upvote_count,
+            id, slug, title, nickname, author_id, created_at, is_pinned,
+            like_count, upvote_count, view_count,
             comments:comments(count)
           `)
           .eq('slug', slug)
@@ -54,35 +60,52 @@ export default function BoardClient({ slug }) {
   }
 
   if (loading) return <div className="text-sm text-gray-500">불러오는 중…</div>
-  if (!posts.length) return <div className="text-gray-600">아직 게시글이 없어요. 첫 글을 남겨보세요!</div>
-
+  
   return (
-    <ul className="space-y-3">
-      {posts.map((p) => (
-        <li key={p.id} className="rounded-xl border p-3">
-          {/* ✅ 제목만 링크로 감싸서 버튼 클릭 시 라우팅되지 않게 */}
-          <Link href={`/boards/${slug}/${p.id}`} className="no-underline hover:underline">
-            <div className="font-semibold">{p.title}</div>
-          </Link>
+    <>
+      {/* 글쓰기 버튼 */}
+      <div className="mb-4 flex justify-end">
+        <Link
+          href={`/boards/${slug}/write`}
+          className="rounded bg-black text-white px-4 py-2 text-sm active:scale-95"
+        >
+          ✏️ 글쓰기
+        </Link>
+      </div>
 
-          <div className="mt-1 text-xs text-gray-500">
-            {p.nickname || '익명'} · {new Date(p.created_at).toLocaleString()}
-            {p.is_pinned ? <span className="ml-2 text-amber-700">📌 고정</span> : null}
-          </div>
+      {!posts.length ? (
+        <div className="text-gray-600">아직 게시글이 없어요. 첫 글을 남겨보세요!</div>
+      ) : (
+        <ul className="space-y-3">
+          {posts.map((p) => (
+            <li key={p.id} className="rounded-xl border p-3">
+              {/* ✅ 제목만 링크로 감싸서 버튼 클릭 시 라우팅되지 않게 */}
+              <Link href={`/boards/${slug}/${p.id}`} className="no-underline hover:underline">
+                <div className="font-semibold">{p.title}</div>
+              </Link>
 
-          {/* ✅ 목록에서도 바로 추천/좋아요 가능 */}
-          <div className="mt-3 flex items-center gap-4">
-            <VoteButton postId={p.id} count={p.upvote_count ?? 0} />
-            <LikeButton postId={p.id} initialCount={p.like_count ?? 0} />
-            <Link
-              href={`/boards/${slug}/${p.id}#comments`}
-              className="text-xs text-gray-600 hover:underline"
-            >
-              댓글 {commentCount(p)}
-            </Link>
-          </div>
-        </li>
-      ))}
-    </ul>
+              <div className="mt-1 text-xs text-gray-500 flex items-center gap-2">
+                <span>{p.nickname || '익명'} · {new Date(p.created_at).toLocaleString()}</span>
+                {p.is_pinned ? <span className="text-amber-700">📌 고정</span> : null}
+                <ViewCounter postId={p.id} initial={p.view_count ?? 0} />
+              </div>
+
+              {/* ✅ 목록에서도 바로 추천/좋아요 가능 */}
+              <div className="mt-3 flex items-center gap-4">
+                <VoteButton postId={p.id} count={p.upvote_count ?? 0} />
+                <LikeButton postId={p.id} initialCount={p.like_count ?? 0} />
+                <Link
+                  href={`/boards/${slug}/${p.id}#comments`}
+                  className="text-xs text-gray-600 hover:underline"
+                >
+                  댓글 {commentCount(p)}
+                </Link>
+                <SimpleDeleteButton postId={p.id} authorId={p.author_id} onDelete={handleDelete} />
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
   )
 }
