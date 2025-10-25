@@ -16,8 +16,8 @@ export default function RootLayout({ children }) {
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <header className="sticky top-0 z-10 bg-white/90 backdrop-blur border-b">
           <div className="mx-auto max-w-5xl px-4 h-14 md:h-16 flex items-center justify-between">
-            <a href="/" className="font-bold text-base md:text-lg text-brand-700 tracking-tight">
-              iSports
+            <a href="/" className="font-bold text-base md:text-lg tracking-tight">
+              <span className="text-blue-600">i</span><span className="text-gray-800">Sports</span>
             </a>
             <HeaderClient />
           </div>
