@@ -1,4 +1,4 @@
-﻿# Sports Nara
+﻿# iSports
 
 스포츠 커뮤니티 플랫폼
 
